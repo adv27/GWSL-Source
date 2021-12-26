@@ -155,10 +155,7 @@ def toggle_clipboard(systray, state):
     """Toggles the clipboard between Windows and WSL graphical apps being on/off. (Only functional in 3 default profiles)"""
     global clipboard
     try:
-        if state == True:
-            phrase = "Enable"
-        else:
-            phrase = "Disable"
+        phrase = "Enable" if state == True else "Disable"
         if ask_clip(phrase):
             clipboard = state
             menu = build_menu()
@@ -327,10 +324,7 @@ def ask():
                                    "This might force-close some windows.",
                               title="Switch Profile",
                               buttons=["Yes", "No"])
-    if choice == "Yes":
-        return True
-    else:
-        return False
+    return choice == "Yes"
 
 
 def ask_clip(phrase):
@@ -339,35 +333,32 @@ def ask_clip(phrase):
                                    "This might force-close some windows.",
                               title=f"{phrase} Clipboard",
                               buttons=["Yes", "No"])
-    if choice == "Yes":
-        return True
-    else:
-        return False
+    return choice == "Yes"
 
 
 def ask_dpi():
     """Prompts user to confirm changing DPI"""
-    choice = pymsgbox.confirm(text="To apply changes, the GWSL will close. Be sure to save any work open in GWSL "
-                                   "programs. This will force close windows running in GWSL. Restart now?",
-                              title=f"Restart XServer to Apply Changes?",
-                              buttons=["Yes", "No"])
-    if choice == "Yes":
-        return True
-    else:
-        return False
+    choice = pymsgbox.confirm(
+        text="To apply changes, the GWSL will close. Be sure to save any work open in GWSL "
+        "programs. This will force close windows running in GWSL. Restart now?",
+        title='Restart XServer to Apply Changes?',
+        buttons=["Yes", "No"],
+    )
+
+    return choice == "Yes"
 
 
 def ask_reset():
     """Prompts user to confirm clearing logs and resetting config"""
-    choice = pymsgbox.confirm(text="Delete GWSL logs and reset configuration? This will not delete shortcuts. "
-                                   "The GWSL XServer will need to be restarted. Be sure to save any work open in GWSL "
-                                   "programs. This will force close windows running in GWSL.",
-                              title=f"Clear GWSL Data?",
-                              buttons=["Yes", "No"])
-    if choice == "Yes":
-        return True
-    else:
-        return False
+    choice = pymsgbox.confirm(
+        text="Delete GWSL logs and reset configuration? This will not delete shortcuts. "
+        "The GWSL XServer will need to be restarted. Be sure to save any work open in GWSL "
+        "programs. This will force close windows running in GWSL.",
+        title='Clear GWSL Data?',
+        buttons=["Yes", "No"],
+    )
+
+    return choice == "Yes"
 
 
 def ask_restart():
@@ -376,10 +367,7 @@ def ask_restart():
         text="Hmm... The GWSL service just crashed or was closed. Do you want to restart the service?",
         title="XServer Has Stopped",
         buttons=['Yes', 'No'])
-    if answer == "Yes":
-        return True
-    else:
-        return False
+    return answer == "Yes"
 
 
 def restart_server():
@@ -415,10 +403,7 @@ def start_server():
 def get_running():
     """Checks whether the GWSL service is currently running"""
     proc_list = os.popen('tasklist').readlines()
-    for proc in proc_list:
-        if "GWSL_vcxsrv" in proc:
-            return True
-    return False
+    return any("GWSL_vcxsrv" in proc for proc in proc_list)
 
 
 def main():
@@ -532,7 +517,7 @@ if __name__ == "__main__":
         mode = iset.read()["graphics"]["window_mode"]
         key = {"multi": "m", "single": "s", "full": "f"}
         try:
-            if key[mode] == "m" or key[mode] == "s" or key[mode] == "f":
+            if key[mode] in ["m", "s", "f"]:
                 print("We have a default!! Hooray!")
                 display_mode = key[mode]
                 clipboard = iset.read()["general"]["clipboard"]

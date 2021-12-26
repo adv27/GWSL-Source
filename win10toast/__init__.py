@@ -136,10 +136,7 @@ class ToastNotifier(object):
 
     def notification_active(self):
         """See if we have an active notification showing"""
-        if self._thread != None and self._thread.is_alive():
-            # We have an active notification, let is finish we don't spam them
-            return True
-        return False
+        return bool(self._thread != None and self._thread.is_alive())
 
     def on_destroy(self, hwnd, msg, wparam, lparam):
         """Clean after notification ended.

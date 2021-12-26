@@ -6,10 +6,7 @@ script = None
 
 
 def pat_con(path):
-    if "/" in path:
-        pt = path.split("/")
-    else:
-        pt = path.split("\\")
+    pt = path.split("/") if "/" in path else path.split("\\")
     lin = "/mnt/" + pt[0][0].lower()
     for f in pt[1:]:
         lin += "/" + str(f.lower())
@@ -81,17 +78,13 @@ def get_apps(machine):
             if "%" in run:
                 run = run[:run.index("%") - 1]
 
-            if "Icon=" in app:
-                icon = app[app.index(":ico:") + 10:]
-            else:
-                icon = None
-
-            apps.update({name: {"cmd": run, "ico": icon}})
+            icon = app[app.index(":ico:") + 10:] if "Icon=" in app else None
+            apps[name] = {"cmd": run, "ico": icon}
     return apps
 
 
 def gtk(machine, scale):
-    if scale == 1 or scale == 2:
+    if scale in [1, 2]:
         cmd = 'wsl.exe -d ' + str(machine) + ' "' + str(pat_con(script)) + '" gtk' + str(scale)
         print(os.popen(cmd).read()[:-1])
 
@@ -102,13 +95,13 @@ def dbus(machine):
 
 
 def qt(machine, scale):
-    if scale == 1 or scale == 2:
+    if scale in [1, 2]:
         cmd = 'wsl.exe -d ' + str(machine) + ' "' + str(pat_con(script)) + '" qt' + str(scale)
         print(os.popen(cmd).read()[:-1])
 
 
 def export(machine, version):
-    if version == 1 or version == 2:
+    if version in [1, 2]:
         cmd = 'wsl.exe -d ' + str(machine) + ' "' + str(pat_con(script)) + '" export' + str(version)
         print(os.popen(cmd).read()[:-1])
 

@@ -39,8 +39,6 @@ class cmd:
                     except Empty:
                         pass
                     else:
-                        if line != "":
-                            pass  # print(line)
                         if "fatal error" in line.lower():
                             self.error = True
                             self.kill()

@@ -53,7 +53,7 @@ else:
     # we are running in a normal Python environment
     bundle_dir = os.path.dirname(os.path.abspath(__file__))
 
-if debug == True:
+if debug:
     print('we are', frozen, 'frozen')
     print('bundle dir is', bundle_dir)
     print('sys.argv[0] is', sys.argv[0])
@@ -118,13 +118,12 @@ try:
         if "conf_ver" not in sett:
             iset.create(app_path + "\\settings.json")
             print("Updating settings")
+        elif sett["conf_ver"] >= 3:
+            if debug == True:
+                print("Settings up to date")
         else:
-            if sett["conf_ver"] >= 3:
-                if debug == True:
-                    print("Settings up to date")
-            else:
-                print("Updating settings")
-                iset.create(app_path + "\\settings.json")
+            print("Updating settings")
+            iset.create(app_path + "\\settings.json")
 
     # Get the script ready
     import wsl_tools as tools
@@ -430,14 +429,13 @@ def get_version(machine):
     try:
         machines = os.popen("wsl.exe -l -v").read()  # lines()
         machines = re.sub(r'[^a-zA-Z0-9./\n-]', r'', machines).splitlines()
-        if "VERSION" in machines[0]:
-            machines = machines[2:]
-            machines[:] = (value for value in machines if value != "")
-            for i in machines:
-                if machine in i:
-                    return int(i[-1])
-        else:
+        if "VERSION" not in machines[0]:
             return 1
+        machines = machines[2:]
+        machines[:] = (value for value in machines if value != "")
+        for i in machines:
+            if machine in i:
+                return int(i[-1])
     except:
         return 1
 
@@ -459,14 +457,12 @@ def helper(topic):
     :param topic:
     :return:
     """
-    if topic == "machine chooser":
-        url = "the-gwsl-user-interface"
-    elif topic == "configure":
-        url = "configuring-a-wsl-distro-for-use-with-gwsl"
-    elif topic == "theme":
+    if topic in ["configure", "theme"]:
         url = "configuring-a-wsl-distro-for-use-with-gwsl"
     elif topic == "launcher":
         url = "using-the-integrated-linux-app-launcher"
+    elif topic == "machine chooser":
+        url = "the-gwsl-user-interface"
     webbrowser.get('windows-default').open("https://opticos.github.io/gwsl/tutorials/manual.html#" + str(url))
 
 
@@ -578,11 +574,10 @@ def choose_machine():
 
     while True:
         mouse = False
-        if win32gui.GetFocus() != HWND:
-            if animator.get("start")[0] == 100:
-                animator.animate("start", [0, 0])
-                animator.animate("start2", [0, 0])
-                break
+        if win32gui.GetFocus() != HWND and animator.get("start")[0] == 100:
+            animator.animate("start", [0, 0])
+            animator.animate("start2", [0, 0])
+            break
         # if animator.get("start")[0] == 0:
         #    pygame.quit()
         #    sys.exit()
@@ -651,11 +646,17 @@ def choose_machine():
         canvas.blit(txt,
                     [WIDTH - txt.get_width() - ui.inch2pix(0.3), ui.inch2pix(0.2) - int(ui.inch2pix(0.1) * (1 - v))])
         hover = pygame.mouse.get_pos()
-        if hover[0] > WIDTH - txt.get_width() - ui.inch2pix(0.4) and hover[0] < WIDTH - ui.inch2pix(0.1):
-            if hover[1] > ui.inch2pix(0.1) and hover[1] < ui.inch2pix(0.3) + txt.get_height() - int(
-                    ui.inch2pix(0.1) * (1 - v)):
-                if mouse != False:
-                    helper("machine chooser")
+        if (
+            hover[0] > WIDTH - txt.get_width() - ui.inch2pix(0.4)
+            and hover[0] < WIDTH - ui.inch2pix(0.1)
+            and hover[1] > ui.inch2pix(0.1)
+            and hover[1]
+            < ui.inch2pix(0.3)
+            + txt.get_height()
+            - int(ui.inch2pix(0.1) * (1 - v))
+            and mouse != False
+        ):
+            helper("machine chooser")
 
         d = ui.inch2pix(0.2)
         h = ui.inch2pix(0.8) + txt.get_height() + ui.inch2pix(0.25)
@@ -669,25 +670,33 @@ def choose_machine():
                 ni = ni.replace("-", " ")
                 txt = title_font.render(ni, True, white)
 
-                if hover[0] > (WIDTH / 2) - (txt.get_width() / 2) - ui.inch2pix(0.2) and hover[0] < (WIDTH / 2) - (
-                        txt.get_width() / 2) + txt.get_width() + ui.inch2pix(0.2):
-                    if hover[1] > h - ui.inch2pix(0.1) - int(v * d) + 1 and hover[
-                        1] < h + txt.get_height() + ui.inch2pix(0.1) - int(v * d):
-                        if mouse != False:
-                            machine = i
-                            animator.animate("choose", [0, 0])
-                        selected = True
-                        s2 = True
+                if (
+                    hover[0]
+                    > (WIDTH / 2) - (txt.get_width() / 2) - ui.inch2pix(0.2)
+                    and hover[0]
+                    < (WIDTH / 2)
+                    - (txt.get_width() / 2)
+                    + txt.get_width()
+                    + ui.inch2pix(0.2)
+                    and hover[1] > h - ui.inch2pix(0.1) - int(v * d) + 1
+                    and hover[1]
+                    < h + txt.get_height() + ui.inch2pix(0.1) - int(v * d)
+                ):
+                    if mouse != False:
+                        machine = i
+                        animator.animate("choose", [0, 0])
+                    selected = True
+                    s2 = True
 
                 s = animator.get("select")[0] / 100
 
-                if s2 == False:
+                if not s2:
                     txt.set_alpha(int(v * 255))
                 else:
                     txt.set_alpha(int((1 - s) * v * 255))
 
                 canvas.blit(txt, [WIDTH / 2 - txt.get_width() / 2, h - int(v * d)])
-                if s2 == True:
+                if s2:
                     txt = title_font.render(ni, True, accent)
                     txt.set_alpha(int((s) * v * 255))
                     canvas.blit(txt, [WIDTH / 2 - txt.get_width() / 2, h - int(v * d)])
@@ -695,7 +704,7 @@ def choose_machine():
                 h += ui.inch2pix(0.3) + txt.get_height()
                 d += ui.inch2pix(0.1)
 
-        if selected == True:
+        if selected:
             animator.animate("select", [100, 0])
         else:
             animator.animate("select", [0, 0])
@@ -703,14 +712,30 @@ def choose_machine():
         txt = title_font.render(_("Cancel"), True, white)
         txt.set_alpha(int(v * 255))
         canvas.blit(txt, [WIDTH / 2 - txt.get_width() / 2, HEIGHT - ui.inch2pix(0.2) - txt.get_height() - int(v * d)])
-        if mouse != False:
-            if mouse[0] > WIDTH / 2 - txt.get_width() / 2 - ui.inch2pix(0.2) and mouse[
-                0] < WIDTH / 2 - txt.get_width() / 2 + txt.get_width() + ui.inch2pix(0.2):
-                if mouse[1] > HEIGHT - ui.inch2pix(0.2) - txt.get_height() - ui.inch2pix(0.1) - int(v * d) and mouse[
-                    1] < HEIGHT - ui.inch2pix(0.2) - txt.get_height() + txt.get_height() + ui.inch2pix(0.1) - int(
-                        v * d):
-                    machine = None
-                    animator.animate("choose", [0, 0])
+        if (
+            mouse != False
+            and mouse[0] > WIDTH / 2 - txt.get_width() / 2 - ui.inch2pix(0.2)
+            and mouse[0]
+            < WIDTH / 2
+            - txt.get_width() / 2
+            + txt.get_width()
+            + ui.inch2pix(0.2)
+            and mouse[1]
+            > HEIGHT
+            - ui.inch2pix(0.2)
+            - txt.get_height()
+            - ui.inch2pix(0.1)
+            - int(v * d)
+            and mouse[1]
+            < HEIGHT
+            - ui.inch2pix(0.2)
+            - txt.get_height()
+            + txt.get_height()
+            + ui.inch2pix(0.1)
+            - int(v * d)
+        ):
+            machine = None
+            animator.animate("choose", [0, 0])
 
         fpsClock.tick(60)
         animator.update()
@@ -738,11 +763,10 @@ def about():
 
     while True:
         mouse = False
-        if win32gui.GetFocus() != HWND:
-            if animator.get("start")[0] == 100:
-                animator.animate("start", [0, 0])
-                animator.animate("start2", [0, 0])
-                break
+        if win32gui.GetFocus() != HWND and animator.get("start")[0] == 100:
+            animator.animate("start", [0, 0])
+            animator.animate("start2", [0, 0])
+            break
         # if animator.get("start")[0] == 0:
         #    pygame.quit()
         #    sys.exit()
@@ -816,12 +840,16 @@ def about():
         canvas.blit(txt, [WIDTH - sett.get_width() - ui.inch2pix(0.37) - txt.get_width(),
                           ui.inch2pix(0.36) - int(ui.inch2pix(0.1) * v)])
 
-        if mouse != False:
-            if mouse[0] > WIDTH - sett.get_width() - ui.inch2pix(0.39) - txt.get_width() and mouse[
-                0] < WIDTH - ui.inch2pix(0.25):
-                if mouse[1] > ui.inch2pix(0.38) - int(ui.inch2pix(0.1) * v) and mouse[1] < ui.inch2pix(0.41) - int(
-                        ui.inch2pix(0.1) * v) + sett.get_height():
-                    test_x()
+        if (
+            mouse != False
+            and mouse[0]
+            > WIDTH - sett.get_width() - ui.inch2pix(0.39) - txt.get_width()
+            and mouse[0] < WIDTH - ui.inch2pix(0.25)
+            and mouse[1] > ui.inch2pix(0.38) - int(ui.inch2pix(0.1) * v)
+            and mouse[1]
+            < ui.inch2pix(0.41) - int(ui.inch2pix(0.1) * v) + sett.get_height()
+        ):
+            test_x()
 
         d = ui.inch2pix(0.2)
         h = ui.inch2pix(0.8) + txt.get_height() + ui.inch2pix(0)
@@ -852,21 +880,29 @@ def about():
                     txt = title_font.render(i, True, white)
                 txt.set_alpha(int(v * 255))
                 canvas.blit(txt, [WIDTH / 2 - txt.get_width() / 2, h - int(v * d)])
-                if mouse != False:
-                    if mouse[0] > WIDTH / 2 - txt.get_width() / 2 - ui.inch2pix(0.2) and mouse[
-                        0] < WIDTH / 2 - txt.get_width() / 2 + txt.get_width() + ui.inch2pix(0.2):
-                        if mouse[1] > h - ui.inch2pix(0.1) - int(v * d) and mouse[
-                            1] < h + txt.get_height() + ui.inch2pix(0.1) - int(v * d):
-                            if i == "View Licenses":
-                                os.popen(app_path + lc_name)
-                            elif i == "Visit Opticos Studios Website":
-                                webbrowser.get('windows-default').open('http://opticos.studio')
-                            elif i == "View Logs":
-                                os.chdir(app_path)
-                                os.popen("notepad service.log|notepad dashboard.log")
-                            elif i == "Edit Configuration":
-                                os.chdir(app_path)
-                                os.popen("settings.json")
+                if (
+                    mouse != False
+                    and mouse[0]
+                    > WIDTH / 2 - txt.get_width() / 2 - ui.inch2pix(0.2)
+                    and mouse[0]
+                    < WIDTH / 2
+                    - txt.get_width() / 2
+                    + txt.get_width()
+                    + ui.inch2pix(0.2)
+                    and mouse[1] > h - ui.inch2pix(0.1) - int(v * d)
+                    and mouse[1]
+                    < h + txt.get_height() + ui.inch2pix(0.1) - int(v * d)
+                ):
+                    if i == "View Licenses":
+                        os.popen(app_path + lc_name)
+                    elif i == "Visit Opticos Studios Website":
+                        webbrowser.get('windows-default').open('http://opticos.studio')
+                    elif i == "View Logs":
+                        os.chdir(app_path)
+                        os.popen("notepad service.log|notepad dashboard.log")
+                    elif i == "Edit Configuration":
+                        os.chdir(app_path)
+                        os.popen("settings.json")
 
                 h += ui.inch2pix(0.29) + txt.get_height()  # used to be 0.3
                 d += ui.inch2pix(0.1)
@@ -875,14 +911,26 @@ def about():
         txt.set_alpha(int(v * 255))
         canvas.blit(txt,
                     [WIDTH / 2 - txt.get_width() / 2, HEIGHT - ui.inch2pix(0.4) - txt.get_height() - int((v - 1) * d)])
-        if mouse != False:
-            if mouse[0] > WIDTH / 2 - txt.get_width() / 2 - ui.inch2pix(0.2) and mouse[
-                0] < WIDTH / 2 - txt.get_width() / 2 + txt.get_width() + ui.inch2pix(0.2):
-                if mouse[1] > HEIGHT - ui.inch2pix(0.4) - txt.get_height() - int((v - 1) * d) and mouse[
-                    1] < HEIGHT - ui.inch2pix(0.4) - txt.get_height() - int(
-                        (v - 1) * d) + txt.get_height() + ui.inch2pix(0.1):
-                    machine = None
-                    animator.animate("choose", [0, 0])
+        if (
+            mouse != False
+            and mouse[0] > WIDTH / 2 - txt.get_width() / 2 - ui.inch2pix(0.2)
+            and mouse[0]
+            < WIDTH / 2
+            - txt.get_width() / 2
+            + txt.get_width()
+            + ui.inch2pix(0.2)
+            and mouse[1]
+            > HEIGHT - ui.inch2pix(0.4) - txt.get_height() - int((v - 1) * d)
+            and mouse[1]
+            < HEIGHT
+            - ui.inch2pix(0.4)
+            - txt.get_height()
+            - int((v - 1) * d)
+            + txt.get_height()
+            + ui.inch2pix(0.1)
+        ):
+            machine = None
+            animator.animate("choose", [0, 0])
 
         fpsClock.tick(60)
         animator.update()
@@ -890,7 +938,7 @@ def about():
         py_root.blit(canvas, [0, 0], special_flags=(pygame.BLEND_RGBA_ADD))
 
         pygame.display.update()
-        if machine == None and animator.get("choose")[0] <= 1:
+        if machine is None and animator.get("choose")[0] <= 1:
             break
 
 
