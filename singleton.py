@@ -101,8 +101,6 @@ def f(name):
         me2 = SingleInstance(flavor_id=name)  # noqa
     except SingleInstanceException:
         sys.exit(-1)
-    #logger.setLevel(tmp)
-    pass
 
 """
 class testSingleton(unittest.TestCase):
